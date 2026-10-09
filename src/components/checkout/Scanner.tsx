@@ -17,7 +17,9 @@ export default function Scanner({ onScan }: ScannerProps) {
   const [retryKey, setRetryKey] = useState(0);
 
   // Always use the latest handler without restarting the camera.
-  onScanRef.current = onScan;
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
 
   useEffect(() => {
     let cancelled = false;

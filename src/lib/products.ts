@@ -57,6 +57,10 @@ const PRODUCTS: Product[] = [
   },
 ];
 
+export function getProducts(): Product[] {
+  return PRODUCTS.map((product) => ({ ...product }));
+}
+
 export function findProductByBarcode(barcode: string): Product | undefined {
   const normalizedBarcode = barcode.trim();
 
