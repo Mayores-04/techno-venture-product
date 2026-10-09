@@ -11,7 +11,6 @@ export type CartItem = Product & {
 };
 
 // Temporary demo data.
-// Replace this with Supabase product lookup later.
 const PRODUCTS: Product[] = [
   {
     id: 1,
