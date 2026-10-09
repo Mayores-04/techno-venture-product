@@ -7,8 +7,8 @@ import BarcodeInput from "@/src/components/checkout/BarcodeInput";
 import Cart from "@/src/components/checkout/Cart";
 import PaymentDialog from "@/src/components/checkout/PaymentDialog";
 import Receipt, { type ReceiptData } from "@/src/components/checkout/Receipt";
-
 import { findProductByBarcode, type CartItem } from "@/src/lib/products";
+import Scanner from "@/src/components/checkout/Scanner";
 
 export default function Home() {
   const [barcode, setBarcode] = useState("");
@@ -186,6 +186,8 @@ export default function Home() {
 
         <div className="checkout-layout">
           <div className="checkout-left">
+            {!paymentOpen && !receipt && <Scanner onScan={scanProduct} />}
+
             <BarcodeInput
               value={barcode}
               onChange={setBarcode}
