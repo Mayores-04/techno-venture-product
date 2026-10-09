@@ -10,6 +10,8 @@ import Receipt, { type ReceiptData } from "@/src/components/checkout/Receipt";
 import { findProductByBarcode, type CartItem } from "@/src/lib/products";
 import Scanner from "@/src/components/checkout/Scanner";
 
+const SCAN_COOLDOWN_MS = 1000;
+
 export default function Home() {
   const [barcode, setBarcode] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -24,6 +26,8 @@ export default function Home() {
   const barcodeRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<HTMLDivElement>(null);
   const cartRef = useRef<HTMLDivElement>(null);
+  const scanSoundRef = useRef<HTMLAudioElement>(null);
+  const lastAcceptedScanTimeRef = useRef(0);
 
   function goToScanner() {
     scannerRef.current?.scrollIntoView({
@@ -42,6 +46,17 @@ export default function Home() {
   function showMessage(text: string, type: "success" | "error") {
     setMessage(text);
     setMessageType(type);
+  }
+
+  function playScanSuccessSound() {
+    const audio = scanSoundRef.current;
+
+    if (!audio) return;
+
+    audio.currentTime = 0;
+    void audio.play().catch((error: unknown) => {
+      console.error("Scan success sound could not play:", error);
+    });
   }
 
   function scanProduct(value: string) {
@@ -70,6 +85,14 @@ export default function Home() {
       return;
     }
 
+    const now = Date.now();
+
+    if (now - lastAcceptedScanTimeRef.current < SCAN_COOLDOWN_MS) {
+      return;
+    }
+
+    lastAcceptedScanTimeRef.current = now;
+
     setCart((current) => {
       const found = current.find((item) => item.id === product.id);
 
@@ -88,7 +111,7 @@ export default function Home() {
     });
 
     showMessage(`${product.name} added to your items.`, "success");
-
+    playScanSuccessSound();
   }
 
   function changeQuantity(id: number, quantity: number) {
@@ -161,6 +184,13 @@ export default function Home() {
 
   return (
     <main className="kiosk-shell">
+      <audio
+        ref={scanSoundRef}
+        src="/scanned_sound.mp3"
+        preload="auto"
+        aria-hidden="true"
+      />
+
       <header className="kiosk-header">
         <div className="brand">
           <div className="brand-icon">
@@ -248,7 +278,11 @@ export default function Home() {
 
       {!paymentOpen && !receipt && (
         <nav className="checkout-nav" aria-label="Checkout shortcuts">
-          <button type="button" className="checkout-nav-button" onClick={goToScanner}>
+          <button
+            type="button"
+            className="checkout-nav-button"
+            onClick={goToScanner}
+          >
             <ScanBarcode size={21} />
             <span>Scan item</span>
           </button>
