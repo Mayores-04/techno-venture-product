@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Store } from "lucide-react";
+import { ScanBarcode, ShoppingCart, Store } from "lucide-react";
 
 import BarcodeInput from "@/src/components/checkout/BarcodeInput";
 import Cart from "@/src/components/checkout/Cart";
@@ -22,11 +22,21 @@ export default function Home() {
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
   const barcodeRef = useRef<HTMLInputElement>(null);
+  const scannerRef = useRef<HTMLDivElement>(null);
+  const cartRef = useRef<HTMLDivElement>(null);
 
-  function focusScanner() {
-    window.setTimeout(() => {
-      barcodeRef.current?.focus();
-    }, 100);
+  function goToScanner() {
+    scannerRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+
+  function goToCart() {
+    cartRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
 
   function showMessage(text: string, type: "success" | "error") {
@@ -49,7 +59,6 @@ export default function Home() {
         "error",
       );
 
-      focusScanner();
       return;
     }
 
@@ -58,7 +67,6 @@ export default function Home() {
     if (existing && existing.quantity >= product.stock) {
       showMessage("Maximum available quantity reached for this item.", "error");
 
-      focusScanner();
       return;
     }
 
@@ -81,7 +89,6 @@ export default function Home() {
 
     showMessage(`${product.name} added to your items.`, "success");
 
-    focusScanner();
   }
 
   function changeQuantity(id: number, quantity: number) {
@@ -113,14 +120,12 @@ export default function Home() {
 
     setMessage("Item removed from your cart.");
     setMessageType("success");
-    focusScanner();
   }
 
   function clearCart() {
     setCart([]);
     setMessage("All items have been removed.");
     setMessageType("success");
-    focusScanner();
   }
 
   function completeDemoPayment() {
@@ -152,7 +157,6 @@ export default function Home() {
     setMessage("");
     setPaymentOpen(false);
     setReceipt(null);
-    focusScanner();
   }
 
   return (
@@ -186,7 +190,11 @@ export default function Home() {
 
         <div className="checkout-layout">
           <div className="checkout-left">
-            {!paymentOpen && !receipt && <Scanner onScan={scanProduct} />}
+            {!paymentOpen && !receipt && (
+              <div ref={scannerRef}>
+                <Scanner onScan={scanProduct} />
+              </div>
+            )}
 
             <BarcodeInput
               value={barcode}
@@ -215,19 +223,21 @@ export default function Home() {
             </div>
           </div>
 
-          <Cart
-            items={cart}
-            onQuantityChange={changeQuantity}
-            onRemove={removeItem}
-            onClear={clearCart}
-            onCheckout={() => {
-              if (cart.length > 0) {
-                setMessage("");
-                setPaymentOpen(true);
-              }
-            }}
-            disabled={paymentOpen || Boolean(receipt)}
-          />
+          <div ref={cartRef} className="cart-anchor">
+            <Cart
+              items={cart}
+              onQuantityChange={changeQuantity}
+              onRemove={removeItem}
+              onClear={clearCart}
+              onCheckout={() => {
+                if (cart.length > 0) {
+                  setMessage("");
+                  setPaymentOpen(true);
+                }
+              }}
+              disabled={paymentOpen || Boolean(receipt)}
+            />
+          </div>
         </div>
 
         <footer className="kiosk-footer">
@@ -236,6 +246,27 @@ export default function Home() {
         </footer>
       </div>
 
+      {!paymentOpen && !receipt && (
+        <nav className="checkout-nav" aria-label="Checkout shortcuts">
+          <button type="button" className="checkout-nav-button" onClick={goToScanner}>
+            <ScanBarcode size={21} />
+            <span>Scan item</span>
+          </button>
+
+          <button
+            type="button"
+            className="checkout-nav-button"
+            onClick={goToCart}
+          >
+            <span className="checkout-nav-icon">
+              <ShoppingCart size={21} />
+              {cart.length > 0 && <strong>{cart.length}</strong>}
+            </span>
+            <span>Your cart</span>
+          </button>
+        </nav>
+      )}
+
       {paymentOpen && (
         <PaymentDialog
           total={cart.reduce(
@@ -243,10 +274,7 @@ export default function Home() {
             0,
           )}
           onSuccess={completeDemoPayment}
-          onClose={() => {
-            setPaymentOpen(false);
-            focusScanner();
-          }}
+          onClose={() => setPaymentOpen(false)}
         />
       )}
 

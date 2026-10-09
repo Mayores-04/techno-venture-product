@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, RefObject } from "react";
+import { FormEvent, RefObject, useEffect, useState } from "react";
 import { Keyboard, ScanBarcode } from "lucide-react";
 
 type Props = {
@@ -18,6 +18,14 @@ export default function BarcodeInput({
   inputRef,
   disabled = false,
 }: Props) {
+  const [manualEntryOpen, setManualEntryOpen] = useState(false);
+
+  useEffect(() => {
+    if (manualEntryOpen && !disabled) {
+      inputRef.current?.focus();
+    }
+  }, [disabled, inputRef, manualEntryOpen]);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -44,40 +52,63 @@ export default function BarcodeInput({
         Scanner ready
       </div>
 
-      <form onSubmit={handleSubmit} className="barcode-form">
-        <label htmlFor="barcode-input">
+      {!manualEntryOpen ? (
+        <button
+          type="button"
+          className="manual-entry-trigger"
+          disabled={disabled}
+          onClick={() => setManualEntryOpen(true)}
+        >
           <Keyboard size={18} />
           Enter barcode manually
-        </label>
+        </button>
+      ) : (
+        <form onSubmit={handleSubmit} className="barcode-form">
+          <label htmlFor="barcode-input">
+            <Keyboard size={18} />
+            Enter barcode manually
+          </label>
 
-        <div className="barcode-controls">
-          <input
-            ref={inputRef}
-            id="barcode-input"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            autoFocus
-            disabled={disabled}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder="Scan or type barcode number"
-            aria-label="Product barcode"
-          />
+          <div className="barcode-controls">
+            <input
+              ref={inputRef}
+              id="barcode-input"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              disabled={disabled}
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              placeholder="Type barcode number"
+              aria-label="Product barcode"
+            />
 
-          <button
-            type="submit"
-            disabled={disabled || !value.trim()}
-            className="primary-button scan-button"
-          >
-            Add Item
-          </button>
-        </div>
+            <button
+              type="submit"
+              disabled={disabled || !value.trim()}
+              className="primary-button scan-button"
+            >
+              Add Item
+            </button>
+          </div>
 
-        <p className="helper-text">
-          You can scan a product or type its barcode and press Enter.
-        </p>
-      </form>
+          <div className="manual-entry-footer">
+            <p className="helper-text">
+              Type the barcode number, then press Add Item.
+            </p>
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => {
+                onChange("");
+                setManualEntryOpen(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
     </section>
   );
 }
