@@ -3,11 +3,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Mini Mart | Self-Checkout",
-  description: "Mobile self-checkout scanner prototype",
+  description: "Smart shopping cart self-checkout prototype",
   applicationName: "Mini Mart Self-Checkout",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Self Checkout",
+    title: "Mini Mart",
     statusBarStyle: "black-translucent",
   },
 };
@@ -16,7 +17,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#090d14",
+  themeColor: "#0a1117",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({

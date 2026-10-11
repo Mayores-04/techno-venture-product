@@ -5,9 +5,10 @@ import { Camera, ScanLine, ShieldCheck } from "lucide-react";
 
 type ScannerProps = {
   onScan: (barcode: string) => void;
+  enabled?: boolean;
 };
 
-export default function Scanner({ onScan }: ScannerProps) {
+export default function Scanner({ onScan, enabled = true }: ScannerProps) {
   const onScanRef = useRef(onScan);
   const lastScanRef = useRef({ value: "", time: 0 });
 
@@ -16,12 +17,15 @@ export default function Scanner({ onScan }: ScannerProps) {
   );
   const [retryKey, setRetryKey] = useState(0);
 
-  // Always use the latest handler without restarting the camera.
   useEffect(() => {
     onScanRef.current = onScan;
   }, [onScan]);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     let cancelled = false;
     let scanner: import("html5-qrcode").Html5Qrcode | null = null;
 
@@ -53,7 +57,7 @@ export default function Scanner({ onScan }: ScannerProps) {
             fps: 10,
             qrbox: (width, height) => ({
               width: Math.floor(Math.min(width * 0.86, 360)),
-              height: Math.floor(Math.min(height * 0.3, 150)),
+              height: Math.floor(Math.min(height * 0.3, 160)),
             }),
             aspectRatio: 1.3333,
           },
@@ -62,15 +66,11 @@ export default function Scanner({ onScan }: ScannerProps) {
             const now = Date.now();
             const last = lastScanRef.current;
 
-            // Prevent duplicate scans from consecutive camera frames.
             if (barcode === last.value && now - last.time < 1800) {
               return;
             }
 
-            lastScanRef.current = {
-              value: barcode,
-              time: now,
-            };
+            lastScanRef.current = { value: barcode, time: now };
 
             if ("vibrate" in navigator) {
               navigator.vibrate(100);
@@ -78,21 +78,14 @@ export default function Scanner({ onScan }: ScannerProps) {
 
             onScanRef.current(barcode);
           },
-          () => {
-            // No barcode found in this frame. Keep scanning.
-          },
+          () => {},
         );
 
-        if (cancelled) {
-          await scanner.stop().catch(() => {});
-          scanner.clear();
-          return;
+        if (!cancelled) {
+          setStatus("ready");
         }
-
-        setStatus("ready");
       } catch (error) {
         console.error("Camera scanner failed:", error);
-
         if (!cancelled) {
           setStatus("error");
         }
@@ -105,20 +98,17 @@ export default function Scanner({ onScan }: ScannerProps) {
       cancelled = true;
 
       if (scanner) {
-        if (scanner.isScanning) {
-          void scanner
-            .stop()
-            .then(() => {
-              scanner?.clear();
-            })
-            .catch(() => {});
-        } else {
-          // clear() returns void in your installed version.
-          scanner.clear();
-        }
+        const currentScanner = scanner;
+
+        void currentScanner
+          .stop()
+          .catch(() => {})
+          .finally(() => {
+            currentScanner.clear();
+          });
       }
     };
-  }, [retryKey]);
+  }, [enabled, retryKey]);
 
   return (
     <section className="scanner-panel">
@@ -134,7 +124,7 @@ export default function Scanner({ onScan }: ScannerProps) {
 
         <span className="scanner-live">
           <span className="scanner-live-dot" />
-          {status === "ready" ? "LIVE" : "CAMERA"}
+          {status === "ready" ? "READY" : "CAMERA"}
         </span>
       </div>
 
@@ -147,22 +137,20 @@ export default function Scanner({ onScan }: ScannerProps) {
 
             {status === "starting" ? (
               <>
-                <strong>Starting camera...</strong>
-                <span>Allow camera access if prompted.</span>
+                <strong>Camera starting</strong>
+                <span>Allow camera access when the browser asks. HTTPS is required for secure camera access.</span>
               </>
             ) : (
               <>
                 <strong>Camera unavailable</strong>
-                <span>
-                  Check camera permission and open this app through HTTPS.
-                </span>
+                <span>Check the device permission and use a secure HTTPS connection, then retry.</span>
 
                 <button
                   type="button"
                   className="scanner-retry"
                   onClick={() => setRetryKey((key) => key + 1)}
                 >
-                  Try camera again
+                  Retry camera
                 </button>
               </>
             )}
@@ -187,7 +175,7 @@ export default function Scanner({ onScan }: ScannerProps) {
 
         <div>
           <strong>Position the barcode inside the frame</strong>
-          <p>Keep the product steady and make sure the barcode is well lit.</p>
+          <p>Keep the barcode steady and well lit. Use the manual fallback if the item cannot be scanned.</p>
         </div>
       </div>
     </section>

@@ -20,19 +20,18 @@ export default function PaymentDialog({ total, onSuccess, onClose }: Props) {
     setProcessing(true);
     setError("");
 
-    // Demo only. This does not contact a payment provider.
     window.setTimeout(() => {
       setProcessing(false);
 
       if (!success) {
         setError(
-          "Demo payment declined. No payment was processed. Please try again.",
+          "Demo payment declined. No payment was processed. The cart remains available for retry.",
         );
         return;
       }
 
       onSuccess();
-    }, 1000);
+    }, 1200);
   }
 
   return (
@@ -45,8 +44,8 @@ export default function PaymentDialog({ total, onSuccess, onClose }: Props) {
       >
         <div className="dialog-heading">
           <div>
-            <h2 id="payment-title">Card Payment</h2>
-            <p>Complete your checkout.</p>
+            <h2 id="payment-title">DEMO PAYMENT</h2>
+            <p>Use the physical card terminal shown in the prototype.</p>
           </div>
 
           <button
@@ -73,13 +72,18 @@ export default function PaymentDialog({ total, onSuccess, onClose }: Props) {
           <LockKeyhole size={23} />
 
           <div>
-            <h3>Present your card</h3>
+            <h3>Payment terminal ready</h3>
             <p>
-              In a real store, follow the instructions on the connected payment
-              terminal. Enter your PIN there only if requested.
+              A real payment provider would be connected here. This prototype only simulates a payment result and never stores or reads card details.
             </p>
           </div>
         </div>
+
+        {processing && (
+          <div className="payment-status" role="status" aria-live="polite">
+            Payment pending on the terminal...
+          </div>
+        )}
 
         {error && (
           <p role="alert" className="payment-error">
@@ -88,9 +92,7 @@ export default function PaymentDialog({ total, onSuccess, onClose }: Props) {
         )}
 
         <div className="demo-payment-actions">
-          <p className="demo-warning">
-            DEMO MODE — no real card payment is possible.
-          </p>
+          <p className="demo-warning">DEMO MODE — no real card payment is processed.</p>
 
           <button
             type="button"
@@ -98,7 +100,7 @@ export default function PaymentDialog({ total, onSuccess, onClose }: Props) {
             disabled={processing}
             onClick={() => simulatePayment(true)}
           >
-            {processing ? "Processing..." : "Simulate Successful Payment"}
+            {processing ? "Processing..." : "Simulate successful payment"}
           </button>
 
           <button
@@ -107,7 +109,7 @@ export default function PaymentDialog({ total, onSuccess, onClose }: Props) {
             disabled={processing}
             onClick={() => simulatePayment(false)}
           >
-            Simulate Failed Payment
+            Simulate failed payment
           </button>
         </div>
       </section>
